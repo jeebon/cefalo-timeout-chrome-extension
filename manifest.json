@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Cefalo Timeout",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A Chrome extension to extend the attendance report on a Cefalo website for tracking safe leave time",
   "author": "Anowar Hossain Jeebon",
   "permissions": ["activeTab"],

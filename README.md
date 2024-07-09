@@ -58,6 +58,14 @@ The `host` permission ensures the extension operates exclusively within the Cefa
 
 For information about how we handle your data, please refer to our [Privacy Policy]('https://jeebon.github.io/cefalo-timeout-chrome-extension/privacy.html').
 
+## Upload to Chrome Web Store: 
+
+Instead of using the default Mac compression, use the following command:
+
+  ```bash
+  zip -r archive.zip ./*
+  ```
+
 ## License
 
 This project is licensed under the MIT License.
