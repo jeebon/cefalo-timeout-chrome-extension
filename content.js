@@ -1,15 +1,17 @@
-const environment = "development";
+const ENV = "development";
+const SAFE_DURATION = {
+  hours: 8,
+  minutes: 30,
+};
 
-function logger() {
-  if (environment === "development") {
-    console.log(...arguments);
+function logger(...args) {
+  if (ENV === "development") {
+    console.log(...args);
   }
 }
 
 function getSafeLeaveTime(entryTime, minHours, minMinutes) {
-  var [hours, minutes] = entryTime.split(":");
-  hours = parseInt(hours);
-  minutes = parseInt(minutes);
+  let [hours, minutes] = entryTime.split(":").map(Number);
   hours += minHours;
   minutes += minMinutes;
   if (minutes >= 60) {
@@ -17,43 +19,41 @@ function getSafeLeaveTime(entryTime, minHours, minMinutes) {
     minutes %= 60;
   }
   hours %= 12;
-  var formattedTime = `${hours.toString().padStart(2, "0")}:${minutes
+  return `${hours.toString().padStart(2, "0")}:${minutes
     .toString()
     .padStart(2, "0")}`;
-  return formattedTime;
 }
 
 function spendTimeTillNow(entryTime, currentTime) {
-  var [hours, minutes] = entryTime.split(":");
-  hours = parseInt(hours);
-  minutes = parseInt(minutes);
+  const [entryHours, entryMinutes] = entryTime.split(":").map(Number);
   const targetTime = new Date();
-  targetTime.setHours(hours, minutes, 0, 0);
+  targetTime.setHours(entryHours, entryMinutes, 0, 0);
 
-  logger(entryTime, currentTime, "::", targetTime, currentTime);
+  logger(entryTime, currentTime, "::", targetTime);
 
-  // Calculate the time difference in milliseconds
   const timeDifferenceMs = currentTime - targetTime;
-
-  const hrs = Math.floor(timeDifferenceMs / (1000 * 60 * 60));
-  const mins = Math.floor((timeDifferenceMs % (1000 * 60 * 60)) / (1000 * 60));
-  return [hrs, mins];
+  const hours = Math.floor(timeDifferenceMs / (1000 * 60 * 60));
+  const minutes = Math.floor(
+    (timeDifferenceMs % (1000 * 60 * 60)) / (1000 * 60)
+  );
+  return [hours, minutes];
 }
 
-function addExtendedColumnsInAttendenceReport() {
+function addExtendedColumnsInAttendanceReport() {
   const tableParent = document.querySelector(".react-bootstrap-table");
-  const table = tableParent.querySelector("table");
+  const table = tableParent?.querySelector("table");
 
   const safeLeaveTitle = "Secure End Time";
-  const entryTimeColumnNo = 1; // index start from 0
-  const insertBeforColumnNo = 3; // index start from 0
+  const entryTimeColumnNo = 1;
+  const insertBeforeColumnNo = 3;
 
   if (table) {
     const headerRow = table.querySelector("thead tr");
 
-    const existingFourthColumn =
-      headerRow.children[insertBeforColumnNo].textContent;
-    if (existingFourthColumn.trim() === safeLeaveTitle) {
+    if (
+      headerRow.children[insertBeforeColumnNo]?.textContent.trim() ===
+      safeLeaveTitle
+    ) {
       return;
     }
 
@@ -61,58 +61,60 @@ function addExtendedColumnsInAttendenceReport() {
     headerColumn.textContent = safeLeaveTitle;
     headerRow.insertBefore(
       headerColumn,
-      headerRow.children[insertBeforColumnNo]
+      headerRow.children[insertBeforeColumnNo]
     );
 
     const dataRows = table.querySelectorAll("tbody tr");
-
     const currentTime = new Date();
 
-    for (let i = 0; i < dataRows.length; i++) {
-      const entryTime = dataRows[i].children[entryTimeColumnNo].textContent;
+    dataRows.forEach((row, index) => {
+      const entryTime = row.children[entryTimeColumnNo].textContent.trim();
 
       let timeCellData = "00:00";
-
       if (entryTime && entryTime !== "00:00") {
-        const safeOutTime = getSafeLeaveTime(entryTime, 9, 0);
+        const safeOutTime = getSafeLeaveTime(
+          entryTime,
+          SAFE_DURATION.hours,
+          SAFE_DURATION.minutes
+        );
         logger("safeOutTime", safeOutTime);
+
         if (safeOutTime) {
-          timeCellData = safeOutTime + " PM";
+          timeCellData = `${safeOutTime} PM`;
         }
-        if (i == 0) {
-          const [spendHours, spendMins] = spendTimeTillNow(
+
+        if (index === 0) {
+          const [spendHours, spendMinutes] = spendTimeTillNow(
             entryTime,
             currentTime
           );
-          timeCellData = `${timeCellData} (Spend: ${spendHours}hours:${spendMins}mins)`;
+          timeCellData += ` (Spend: ${spendHours} hours:${spendMinutes} mins)`;
         }
       }
 
       const newTimeCell = document.createElement("td");
       newTimeCell.textContent = timeCellData;
-      dataRows[i].insertBefore(
-        newTimeCell,
-        dataRows[i].children[insertBeforColumnNo]
-      );
-    }
+      row.insertBefore(newTimeCell, row.children[insertBeforeColumnNo]);
+    });
   } else {
     logger("Table not found!");
   }
 }
 
-window.addEventListener("load", function () {
-  let i = 0;
-  const interval = setInterval(function () {
+window.addEventListener("load", () => {
+  let attempts = 0;
+  const maxAttempts = 10;
+  const interval = setInterval(() => {
     const tableParent = document.querySelector(".react-bootstrap-table");
     if (tableParent) {
       logger("Table found!");
       clearInterval(interval);
-      addExtendedColumnsInAttendenceReport();
+      addExtendedColumnsInAttendanceReport();
     }
-    if (i > 10) {
-      logger("10 time tried table not found!");
+    if (attempts >= maxAttempts) {
+      logger("Table not found after 10 attempts!");
       clearInterval(interval);
     }
-    i++;
+    attempts++;
   }, 1000);
 });
