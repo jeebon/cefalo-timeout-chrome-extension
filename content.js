@@ -88,7 +88,7 @@ function addExtendedColumnsInAttendanceReport() {
             entryTime,
             currentTime
           );
-          timeCellData += ` (Spend: ${spendHours} hours:${spendMinutes} mins)`;
+          timeCellData += ` (Spent: ${spendHours} hours:${spendMinutes} mins)`;
         }
       }
 
