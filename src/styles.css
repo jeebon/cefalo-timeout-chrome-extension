@@ -1,0 +1,8 @@
+/* Injected on every hrportal.cefalolab.com page (broad content-script match,
+   see manifest.config.js), so every selector here is namespaced `cto-` to
+   guarantee it can never touch a portal-owned class. */
+
+.cto-cell {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
