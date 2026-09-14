@@ -9,6 +9,9 @@ import {
   rowDateFromKey,
   elapsedSince,
   formatElapsed,
+  formatCountdown,
+  progressRatio,
+  derivePanelState,
 } from "../src/lib/time.js";
 
 const SAFE_DURATION_MINUTES = 8 * 60 + 30;
@@ -71,4 +74,134 @@ test("elapsedSince clamps to zero and treats non-entries as null", () => {
 
 test("formatElapsed", () => {
   assert.equal(formatElapsed({ hours: 4, minutes: 12 }), "4h 12m in");
+});
+
+test("formatCountdown zero-pads all three fields", () => {
+  assert.equal(formatCountdown(0), "00:00:00");
+  assert.equal(formatCountdown(3_661_000), "01:01:01"); // 1h 1m 1s
+  assert.equal(formatCountdown(-500), "00:00:00"); // never negative
+});
+
+test("progressRatio clamps to [0,1]", () => {
+  assert.equal(progressRatio(0, 100), 0);
+  assert.equal(progressRatio(50, 100), 0.5);
+  assert.equal(progressRatio(150, 100), 1); // overtime doesn't overflow a bar
+  assert.equal(progressRatio(-10, 100), 0);
+  assert.equal(progressRatio(50, 0), 0); // no divide-by-zero
+});
+
+test("derivePanelState: loading when there's no row yet", () => {
+  assert.deepEqual(
+    derivePanelState({
+      hasRow: false,
+      rowDateKey: null,
+      startText: "",
+      endText: "",
+      now: new Date(2026, 8, 14, 10, 0),
+      durationMinutes: SAFE_DURATION_MINUTES,
+    }),
+    { kind: "loading" }
+  );
+});
+
+test("derivePanelState: waiting when the row has no real start time", () => {
+  for (const startText of ["00:00", "", "-"]) {
+    const state = derivePanelState({
+      hasRow: true,
+      rowDateKey: "2026-09-14",
+      startText,
+      endText: "00:00",
+      statusText: "Casual Leave",
+      now: new Date(2026, 8, 14, 10, 0),
+      durationMinutes: SAFE_DURATION_MINUTES,
+    });
+    assert.deepEqual(state, { kind: "waiting", statusText: "Casual Leave" });
+  }
+});
+
+test("derivePanelState: running, mid-shift", () => {
+  const state = derivePanelState({
+    hasRow: true,
+    rowDateKey: "2026-09-14",
+    startText: "09:59",
+    endText: "",
+    statusText: "Normal",
+    now: new Date(2026, 8, 14, 12, 30),
+    durationMinutes: SAFE_DURATION_MINUTES,
+  });
+  assert.equal(state.kind, "running");
+  assert.equal(state.start, "09:59");
+  assert.equal(state.end, "18:29");
+  assert.equal(state.inOffice, "02:31:00");
+  assert.equal(state.remaining, "05:59:00");
+  assert.ok(state.ratio > 0 && state.ratio < 1);
+});
+
+test("derivePanelState: overtime, past end time and still clocked in", () => {
+  const state = derivePanelState({
+    hasRow: true,
+    rowDateKey: "2026-09-14",
+    startText: "09:59",
+    endText: "",
+    now: new Date(2026, 8, 14, 19, 6),
+    durationMinutes: SAFE_DURATION_MINUTES,
+  });
+  assert.equal(state.kind, "overtime");
+  assert.equal(state.end, "18:29");
+  assert.equal(state.over, "00:37:00");
+});
+
+test("derivePanelState: done once a real End Time is present — reports the ACTUAL checkout time, not the computed secure-end target, and quotes the portal's own total instead of recomputing one", () => {
+  const state = derivePanelState({
+    hasRow: true,
+    rowDateKey: "2026-09-14",
+    startText: "09:59",
+    endText: "14:03",
+    portalTotalText: "3h: 4m",
+    now: new Date(2026, 8, 14, 20, 0),
+    durationMinutes: SAFE_DURATION_MINUTES,
+  });
+  assert.deepEqual(state, {
+    kind: "done",
+    statusText: "",
+    start: "09:59",
+    end: "14:03", // the actual checkout time — NOT "18:29" (start + 8h30)
+    portalTotal: "3h: 4m",
+  });
+});
+
+test("derivePanelState: overnight shift (start yesterday) computes a positive remaining, not a wrapped-negative one", () => {
+  // start 20:59 on the 14th -> secure end 05:29 on the 15th. Observed at
+  // 01:00 on the 15th, 4h29m should remain — this is the case a
+  // date-naive implementation gets backwards.
+  const state = derivePanelState({
+    hasRow: true,
+    rowDateKey: "2026-09-14",
+    startText: "20:59",
+    endText: "",
+    now: new Date(2026, 8, 15, 1, 0),
+    durationMinutes: SAFE_DURATION_MINUTES,
+  });
+  assert.equal(state.kind, "running");
+  assert.equal(state.end, "05:29");
+  assert.equal(state.remaining, "04:29:00");
+  assert.equal(state.inOffice, "04:01:00");
+});
+
+test("derivePanelState: clock skew (now before start) clamps elapsed to zero instead of adding a day", () => {
+  // Same shape of inputs as the overnight case above (now < start-of-day
+  // arithmetic could wrap either way) but here `now` is simply earlier the
+  // same day as a stale/skewed reading — elapsed must clamp to zero, not
+  // become "23h31m", and remaining must be the full shift, not negative.
+  const state = derivePanelState({
+    hasRow: true,
+    rowDateKey: "2026-09-14",
+    startText: "09:59",
+    endText: "",
+    now: new Date(2026, 8, 14, 9, 30),
+    durationMinutes: SAFE_DURATION_MINUTES,
+  });
+  assert.equal(state.kind, "running");
+  assert.equal(state.inOffice, "00:00:00");
+  assert.equal(state.remaining, "08:59:00");
 });

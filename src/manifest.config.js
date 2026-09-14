@@ -19,7 +19,7 @@ export function createManifest(target, version) {
     name: "Cefalo Timeout",
     version,
     description:
-      "Adds a computed Secure End Time column to the Cefalo HR portal attendance report.",
+      "Adds a computed Secure End Time column and a live Today countdown panel to the Cefalo HR portal attendance report.",
     author: "Anowar Hossain Jeebon",
     // No `permissions` or `host_permissions`: a statically declared content
     // script derives its host access from `matches` below and is its own

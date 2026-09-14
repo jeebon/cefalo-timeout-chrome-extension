@@ -42,14 +42,71 @@ export function getHeaderTexts(wrapper) {
 }
 
 /**
+ * `totalIdx`/`statusIdx` are -1, not a bail, when the portal doesn't have
+ * those columns — only Start/End Time are load-bearing for the column
+ * itself; the Today panel treats them as optional enrichment (D9).
  * @param {string[]} headerTexts
- * @returns {{srcIdx:number, endIdx:number, insertAt:number}|null}
+ * @returns {{srcIdx:number, endIdx:number, insertAt:number, totalIdx:number, statusIdx:number}|null}
  */
 export function computeIndices(headerTexts) {
   const srcIdx = headerTexts.indexOf(HEADER_TEXT.startTime);
   const endIdx = headerTexts.indexOf(HEADER_TEXT.endTime);
   if (srcIdx === -1 || endIdx === -1) return null;
-  return { srcIdx, endIdx, insertAt: endIdx + 1 };
+  return {
+    srcIdx,
+    endIdx,
+    insertAt: endIdx + 1,
+    totalIdx: headerTexts.indexOf(HEADER_TEXT.totalWorkHour),
+    statusIdx: headerTexts.indexOf(HEADER_TEXT.status),
+  };
+}
+
+// Shared by index.js for both the column's per-row loop and the panel's
+// today-row lookup, so the two never drift on what counts as "a data row".
+export const DATA_ROW_SELECTOR = ".ant-table-tbody > tr[data-row-key]:not(.ant-table-measure-row)";
+
+/**
+ * Text of one cell, blank for a missing/-1 column index rather than
+ * throwing — lets optional columns (Total Work Hour, Status) be absent.
+ * @param {Element} row
+ * @param {number} idx
+ */
+export function cellText(row, idx) {
+  if (idx == null || idx < 0) return "";
+  return row.children[idx]?.textContent.trim() ?? "";
+}
+
+/**
+ * The single text-only anchor for the right-rail summary card, valid in
+ * BOTH its layouts: the sticky rail at >=1024px, and the AntD modal the
+ * portal swaps it for below that width (measured live — the rail is not
+ * hidden with CSS at that width, it is removed from the DOM entirely).
+ * Deliberately never touches the Tailwind utility-class soup wrapping
+ * either container — that's rewritten on every layout tweak, and
+ * `lg:sticky` would need escaping to even query.
+ * @returns {{mode:"rail"|"modal", container:Element, reference:Element}|null}
+ */
+export function findSummaryMount() {
+  const anchor = [...document.querySelectorAll("span, div")].find(
+    (el) => el.children.length === 0 && el.textContent.trim() === "Attendance Status"
+  );
+  if (!anchor) return null;
+
+  const card = anchor.closest(".ant-card");
+  if (card && card.parentElement) {
+    return { mode: "rail", container: card.parentElement, reference: card };
+  }
+
+  const modalBody = anchor.closest(".ant-modal-body");
+  if (modalBody) {
+    let block = anchor;
+    while (block.parentElement && block.parentElement !== modalBody) block = block.parentElement;
+    if (block.parentElement === modalBody) {
+      return { mode: "modal", container: modalBody, reference: block };
+    }
+  }
+
+  return null;
 }
 
 export function removeInjected() {
@@ -98,9 +155,7 @@ export function injectColumn(wrapper, insertAt, computeCellText) {
     measureRow.insertBefore(td, measureRow.children[insertAt] || null);
   }
 
-  const rows = wrapper.querySelectorAll(
-    ".ant-table-tbody > tr[data-row-key]:not(.ant-table-measure-row)"
-  );
+  const rows = wrapper.querySelectorAll(DATA_ROW_SELECTOR);
   rows.forEach((row) => {
     const td = document.createElement("td");
     td.className = "ant-table-cell cto-cell";

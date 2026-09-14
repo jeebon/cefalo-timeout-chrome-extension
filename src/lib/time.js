@@ -102,3 +102,127 @@ export function elapsedSince(startTimeText, now) {
 export function formatElapsed(elapsed) {
   return `${elapsed.hours}h ${elapsed.minutes}m in`;
 }
+
+/**
+ * Build a local Date for a portal row's own date plus an "HH:MM" time. Used
+ * instead of anchoring everything to `now`'s date, which is what makes an
+ * overnight shift (started yesterday, still open after midnight) compute
+ * correctly instead of being indistinguishable from ordinary clock skew —
+ * see derivePanelState.
+ * @param {string} dateKey "YYYY-MM-DD"
+ * @param {{h:number,m:number}} hm
+ * @returns {Date}
+ */
+function dateTimeAt(dateKey, hm) {
+  const [y, mo, d] = dateKey.split("-").map(Number);
+  return new Date(y, mo - 1, d, hm.h, hm.m, 0, 0);
+}
+
+/**
+ * Format a non-negative millisecond duration as zero-padded "HH:MM:SS".
+ * @param {number} ms
+ */
+export function formatCountdown(ms) {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  return `${pad2(h)}:${pad2(m)}:${pad2(s)}`;
+}
+
+/**
+ * Fraction of the work day elapsed, clamped to [0,1] so overtime can't push
+ * a progress bar past full.
+ * @param {number} elapsedMs
+ * @param {number} totalMs
+ */
+export function progressRatio(elapsedMs, totalMs) {
+  if (totalMs <= 0) return 0;
+  return Math.min(1, Math.max(0, elapsedMs / totalMs));
+}
+
+/**
+ * Pure state for the "Today" countdown panel. Never claims a figure that
+ * contradicts the portal: running/overtime report presence ("in office"
+ * time), not the portal's own counted total, and done echoes the portal's
+ * own Total Work Hour text verbatim instead of recomputing a rival number.
+ *
+ * `rowDateKey` — the date the matched row itself belongs to, not `now`'s
+ * date — is what lets this tell an overnight shift ("start 20:59 yesterday,
+ * now 01:00" -> positive remaining) apart from ordinary clock skew ("start
+ * 09:59 today, now 09:30 today" -> zero elapsed, not a day added). Passing
+ * only `now`'s date for both would make one of those two cases wrong.
+ *
+ * @param {{
+ *   hasRow: boolean,
+ *   rowDateKey: string|null,
+ *   startText: string,
+ *   endText: string,
+ *   portalTotalText?: string,
+ *   statusText?: string,
+ *   now: Date,
+ *   durationMinutes: number,
+ * }} args
+ */
+export function derivePanelState({
+  hasRow,
+  rowDateKey,
+  startText,
+  endText,
+  portalTotalText,
+  statusText,
+  now,
+  durationMinutes,
+}) {
+  const status = statusText || "";
+  if (!hasRow || !rowDateKey) return { kind: "loading" };
+
+  const start = parseHm(startText);
+  if (!start) return { kind: "waiting", statusText: status };
+
+  const end = addMinutes(start, durationMinutes);
+  const endDate = dateTimeAt(rowDateKey, end);
+  if (end.crossesMidnight) endDate.setDate(endDate.getDate() + 1);
+
+  const startDate = dateTimeAt(rowDateKey, start);
+  const elapsedMs = Math.max(0, now.getTime() - startDate.getTime());
+  const inOffice = formatCountdown(elapsedMs);
+
+  // A real (non-00:00) End Time means the portal already has the final
+  // word — quote its own checkout time and total rather than showing the
+  // *target* secure end time next to them (that's `end` above, used by
+  // running/overtime — reusing it here would print "Out 18:29" beside a
+  // portal card that says the actual checkout was 14:03).
+  const actualEnd = parseHm(endText);
+  if (actualEnd) {
+    return {
+      kind: "done",
+      statusText: status,
+      start: formatHm(start),
+      end: formatHm(actualEnd),
+      portalTotal: portalTotalText || "",
+    };
+  }
+
+  const remainingMs = endDate.getTime() - now.getTime();
+  if (remainingMs <= 0) {
+    return {
+      kind: "overtime",
+      statusText: status,
+      start: formatHm(start),
+      end: formatHm(end),
+      inOffice,
+      over: formatCountdown(-remainingMs),
+    };
+  }
+
+  return {
+    kind: "running",
+    statusText: status,
+    start: formatHm(start),
+    end: formatHm(end),
+    inOffice,
+    remaining: formatCountdown(remainingMs),
+    ratio: progressRatio(elapsedMs, durationMinutes * 60_000),
+  };
+}

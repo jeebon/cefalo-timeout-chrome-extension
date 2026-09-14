@@ -1,7 +1,7 @@
 # Cefalo Timeout Extension
 
 The Cefalo Timeout Extension enhances the attendance reports in the Cefalo HR Portal by adding a
-"Secure End Time" column and, for today's row, how long you've been clocked in.
+"Secure End Time" column, and a "Today" panel with a live countdown to that time.
 
 Available for **Chrome and Firefox**, built from one source tree.
 
@@ -14,6 +14,13 @@ Available for **Chrome and Firefox**, built from one source tree.
 - **Elapsed time, for today only**: while you're still clocked in today, the column also shows how
   long you've been in. Once you check out, the portal's own Total Work Hour is authoritative and
   the extension gets out of the way.
+
+- **Today panel**: a live countdown card above the portal's own "Attendance Status" summary (and
+  inside its narrow-window modal, for smaller screens), showing today's start time, secure end
+  time, and time remaining. If you haven't clocked in yet, it shows a calm explanatory message
+  instead of a clock counting down from nothing. When the end time is reached, the browser tab
+  title gets a `⏰` prefix so a backgrounded tab still flags it — no notification permission is
+  requested or required.
 
 - **Local processing only**: all data processing happens locally in your browser, by reading the
   attendance table already on the page. Nothing is transmitted anywhere, and the extension makes
@@ -77,8 +84,10 @@ from that match pattern alone, and nothing broader is requested. The extension:
 
 - never makes a network request of its own (no `fetch`, no `XMLHttpRequest`);
 - never reads `localStorage`, cookies, or any authentication token;
-- only reads and modifies the DOM of the attendance table already rendered on the page, and only
-  on the Cefalo HR Portal.
+- only reads and modifies the DOM of the attendance table (and the "Attendance Status" summary
+  area) already rendered on the page, and only on the Cefalo HR Portal;
+- never requests the `Notification` permission — the "time's up" alert is a plain change to the
+  browser tab's title, which needs no permission at all.
 
 The content script is loaded on the whole portal host, not only the `/attendance/` path, because
 the portal is a single-page app: navigating between its tabs never triggers a full page load, so
