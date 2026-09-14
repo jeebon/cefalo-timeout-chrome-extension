@@ -3,7 +3,6 @@
    guarantee it can never touch a portal-owned class. */
 
 .cto-cell {
-  text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
