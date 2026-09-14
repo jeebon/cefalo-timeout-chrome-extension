@@ -21,13 +21,18 @@ export function createManifest(target, version) {
     description:
       "Adds a computed Secure End Time column and a live Today countdown panel to the Cefalo HR portal attendance report.",
     author: "Anowar Hossain Jeebon",
-    // No `permissions` or `host_permissions`: a statically declared content
-    // script derives its host access from `matches` below and is its own
-    // grant. Broad host (rather than /attendance/* only) is intentional —
-    // the route gate lives in the script at sync() time, not in the
-    // manifest, so the script (and its MutationObserver) is present on
-    // every portal page and can catch client-side navigation into
-    // /attendance/ that never fires a document load event.
+    // `storage` is the only permission this extension declares. It backs the
+    // members-directory tracker's local history (chrome.storage.local) —
+    // never a network permission, never a host permission beyond `matches`
+    // below. Neither browser shows the user a warning for `storage`.
+    permissions: ["storage"],
+    // No `host_permissions`: a statically declared content script derives
+    // its host access from `matches` below and is its own grant. Broad host
+    // (rather than /attendance/* only) is intentional — the route gate lives
+    // in the script at sync() time, not in the manifest, so the script (and
+    // its MutationObserver) is present on every portal page and can catch
+    // client-side navigation into /attendance/ or /members-directory/ that
+    // never fires a document load event.
     content_scripts: [
       {
         matches: ["https://hrportal.cefalolab.com/*"],

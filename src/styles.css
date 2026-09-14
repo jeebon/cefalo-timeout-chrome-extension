@@ -110,3 +110,237 @@
 .cto-panel[data-cto-state="loading"] .cto-panel-countdown {
   color: #9ca3af;
 }
+
+/* Members-directory tracker bar. Not AntD-card-derived (unlike .cto-panel) —
+   the members page has no card chrome nearby to inherit, so this borrows
+   a plain, self-contained look instead. */
+
+.cto-dir {
+  background: #fff;
+  border: 1px solid rgb(229, 231, 235);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: #374151;
+}
+
+/* The head is a <button> (the whole bar's collapse toggle) — reset button
+   chrome so it reads as a plain row, not a form control. */
+.cto-dir-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  margin-bottom: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.cto-dir[data-cto-dir-collapsed="0"] .cto-dir-head {
+  margin-bottom: 8px;
+}
+.cto-dir-head-title {
+  font-weight: 600;
+  font-size: 13px;
+}
+.cto-dir-head-summary {
+  flex: 1;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 400;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cto-dir-chevron {
+  color: #9ca3af;
+  font-size: 11px;
+  transition: transform 0.15s ease;
+}
+.cto-dir[data-cto-dir-collapsed="1"] .cto-dir-chevron {
+  transform: rotate(-90deg);
+}
+
+.cto-dir-btn {
+  border: 1px solid rgb(217, 217, 217);
+  background: #fff;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.cto-dir-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.cto-dir-btn-primary {
+  background: #2f6b45;
+  border-color: #2f6b45;
+  color: #fff;
+}
+.cto-dir-btn-danger {
+  color: #a3342b;
+  border-color: #f3d4d0;
+}
+
+.cto-dir-track-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+.cto-dir-hint {
+  margin: 0;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.cto-dir-former {
+  margin-bottom: 10px;
+}
+.cto-dir-former-header {
+  background: none;
+  border: none;
+  padding: 0;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  color: inherit;
+}
+.cto-dir-former-thumbs {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+.cto-dir-thumb {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  object-fit: cover;
+  background: #e5e7eb;
+}
+.cto-dir-thumb-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: #6b7280;
+}
+.cto-dir-former-list {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cto-dir-former-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.cto-dir-former-row .cto-dir-thumb {
+  width: 32px;
+  height: 32px;
+}
+.cto-dir-former-name {
+  font-weight: 600;
+}
+.cto-dir-former-meta,
+.cto-dir-former-left {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.cto-dir-action-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.cto-dir-confirm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fdf5e3;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+}
+
+.cto-dir-error {
+  color: #a3342b;
+  margin: 0 0 8px;
+  font-size: 12px;
+}
+
+/* Every element above toggled via the `hidden` DOM property needs `display`
+   set for its VISIBLE state, which is what breaks `[hidden]`: a plain class
+   selector and the browser's own `[hidden] { display: none }` rule have
+   EQUAL specificity, so source order decides, and an author stylesheet
+   always comes after the UA one — our `display: flex` silently wins and
+   `hidden` stops hiding anything. Measured live: without this block, every
+   bar state (Track, Snap/Untrack, both confirms) rendered simultaneously.
+   `[class][hidden]` outranks a bare class selector, which is what makes
+   this override win regardless of rule order. */
+.cto-dir-track-row[hidden],
+.cto-dir-former-list[hidden],
+.cto-dir-action-row[hidden],
+.cto-dir-confirm[hidden] {
+  display: none;
+}
+
+.cto-dir-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+.cto-dir-timeline-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #6b7280;
+}
+.cto-dir-timeline-summary {
+  flex: 1;
+}
+.cto-dir-timeline-del {
+  flex: none;
+  border: none;
+  background: none;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 2px 4px;
+  line-height: 1;
+}
+.cto-dir-timeline-del:hover {
+  color: #a3342b;
+}
+
+/* Badge on a member card — needs the card to be a positioning context;
+   .cto-dir-badge-anchor is only added when the card's own position is
+   `static`, so this never overrides a layout the portal already controls. */
+.cto-dir-badge-anchor {
+  position: relative;
+}
+.cto-dir-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: #2f6b45;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 2px 5px;
+  border-radius: 4px;
+}

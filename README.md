@@ -1,7 +1,8 @@
 # Cefalo Timeout Extension
 
-The Cefalo Timeout Extension enhances the attendance reports in the Cefalo HR Portal by adding a
-"Secure End Time" column, and a "Today" panel with a live countdown to that time.
+The Cefalo Timeout Extension enhances the Cefalo HR Portal: a "Secure End Time" column and a
+"Today" countdown panel on the attendance report, and an opt-in join/leave tracker on the member
+directory.
 
 Available for **Chrome and Firefox**, built from one source tree.
 
@@ -25,6 +26,13 @@ Available for **Chrome and Firefox**, built from one source tree.
 - **Local processing only**: all data processing happens locally in your browser, by reading the
   attendance table already on the page. Nothing is transmitted anywhere, and the extension makes
   no network requests of its own.
+
+- **Member directory tracker** *(opt-in)*: on the Team Members page, click **Track** to record the
+  current roster, then **Snap** any time after to see who joined and who left since the last time
+  you checked — with a timeline of every snap and a "Former members" list for anyone no longer on
+  the page. Nothing is recorded until you click Track, and **Untrack** deletes the history
+  permanently (with a confirmation). Only what the page itself displays is stored — name, username,
+  designation, team and photo — never email, phone, or anything read from the portal's private API.
 
 ## Installation
 
@@ -77,15 +85,23 @@ There is one devDependency (`esbuild`). See `CLAUDE.md` for the full architectur
 
 ## Permissions Justification
 
-This extension declares **no `permissions` and no `host_permissions`**. Its only manifest entry
-relevant to access is a `content_scripts.matches` pattern scoped to
+This extension declares exactly **one permission, `storage`**, and no `host_permissions`. Its only
+other manifest entry relevant to access is a `content_scripts.matches` pattern scoped to
 `https://hrportal.cefalolab.com/*` — a statically declared content script derives its host access
 from that match pattern alone, and nothing broader is requested. The extension:
 
-- never makes a network request of its own (no `fetch`, no `XMLHttpRequest`);
-- never reads `localStorage`, cookies, or any authentication token;
-- only reads and modifies the DOM of the attendance table (and the "Attendance Status" summary
-  area) already rendered on the page, and only on the Cefalo HR Portal;
+- never makes a network request of its own (no `fetch`, no `XMLHttpRequest`) — the one exception is
+  the member-tracker's Former Members thumbnails, which are ordinary `<img>` tags pointing at an
+  avatar URL the portal itself already rendered on the page, not a request the extension
+  originates;
+- never reads `localStorage`, cookies, or any authentication token — `storage` is Chrome's/
+  Firefox's own extension storage API (`chrome.storage.local`), never the portal's `localStorage`;
+- only reads and modifies the DOM of the attendance table, the "Attendance Status" summary area,
+  and the member directory grid already rendered on the page, and only on the Cefalo HR Portal;
+- the member tracker only stores what the directory page visibly displays — name, username,
+  designation, team, and an avatar URL — never email, phone, or any field read from the portal's
+  authenticated JSON API; nothing is recorded until the user clicks **Track**, and **Untrack**
+  deletes it permanently;
 - never requests the `Notification` permission — the "time's up" alert is a plain change to the
   browser tab's title, which needs no permission at all.
 
