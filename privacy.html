@@ -98,17 +98,30 @@
       any information that you give when you use this extension.</p>
 
     <h3>Information We Collect</h3>
-    <p>Our extension does not collect any personal data from users. The only data accessed is the content on the Cefalo
-      HR Portal's attendance tab to insert calculated secure end times and display time spent information.</p>
+    <p>On the attendance page, our extension does not store or persist anything — it only reads the content already on
+      the page to insert calculated secure end times, a live countdown, and time-spent information.</p>
+    <p>On the Team Members page, the extension offers an opt-in member directory tracker. Nothing is recorded until
+      you explicitly click <strong>Track</strong>. If you use it, the extension stores — only in your own browser,
+      via the browser's built-in extension storage (<code>chrome.storage.local</code>), never the portal's own
+      storage — exactly what that page already displays for each member: name, username, designation, team, and an
+      avatar image URL. It never stores email addresses, phone numbers, or any field read from the portal's
+      authenticated API — only what's visibly rendered on the page. You can delete this history at any time: an
+      individual snapshot (other than the first) can be removed on its own, and <strong>Untrack</strong> permanently
+      deletes the entire history, both with a confirmation step first.</p>
 
     <h3>How We Use the Information</h3>
-    <p>The information accessed by our extension is used solely to enhance the attendance report on the Cefalo HR Portal
-      by adding a "Secure End Time" column and displaying the time spent since the first entry.</p>
+    <p>The information read from the attendance page is used solely to enhance that report by adding a "Secure End
+      Time" column, a Today countdown panel, and time-spent information. The information stored by the member
+      directory tracker (when you opt in) is used solely to show you, locally, who joined or left the Team Members
+      page between the times you clicked Track/Snap — it is never used for any other purpose.</p>
 
     <h3>Data Security</h3>
     <p>We are committed to ensuring that your information is secure. Our extension does not transmit any data to
-      external servers, and all processing is done locally on your device. We have put in place suitable physical,
-      electronic, and managerial procedures to safeguard and secure the information we access online.</p>
+      external servers, and all processing and storage is done locally on your device. Tracking history saved by the
+      member directory tracker stays in the extension's own local storage — it is private to the extension, not
+      shared with the Cefalo HR Portal's own website storage, and is removed if you uninstall the extension or use
+      Untrack. We have put in place suitable physical, electronic, and managerial procedures to safeguard and secure
+      the information we access online.</p>
 
     <h3>Cookies</h3>
     <p>Our extension does not use cookies to store any information.</p>

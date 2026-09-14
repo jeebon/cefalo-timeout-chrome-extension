@@ -94,9 +94,33 @@
 
   <div class="container main">
     <h2>Welcome to the Cefalo Timeout Extension</h2>
-    <p>This extension enhances the attendance reports in the Cefalo HR Portal by adding a "Secure End Time" column. It
-      helps Cefalo employees understand the exact time they should leave to ensure their minimum required hours are
-      fulfilled.</p>
+    <p>This extension enhances two pages of the Cefalo HR Portal: the attendance report and the member directory.
+      It's available for both Chrome and Firefox, built from one source tree.</p>
+
+    <h3>Secure End Time column</h3>
+    <p>On the attendance report, a computed "Secure End Time" column shows the exact time you should leave to ensure
+      your minimum required hours are fulfilled — in 24-hour time, with a <code>(+1d)</code> marker if it crosses
+      midnight. While you're still clocked in today, it also shows how long you've been in; once you check out, the
+      portal's own Total Work Hour is authoritative and the extension gets out of the way.</p>
+
+    <h3>Today countdown panel</h3>
+    <p>A live countdown card above the portal's own "Attendance Status" summary (and inside its modal on smaller
+      screens) shows today's start time, secure end time, and time remaining. When the end time is reached, the
+      browser tab title gets a &#9200; prefix so a backgrounded tab still flags it — no notification permission is
+      requested or required.</p>
+
+    <h3>Member directory tracker <em>(opt-in)</em></h3>
+    <p>On the Team Members page, click <strong>Track</strong> to record the current roster, then <strong>Snap</strong>
+      any time after to see who joined and who left since the last time you checked — with a collapsible timeline of
+      every snap (collapsed by default) and a "Former members" list for anyone no longer on the page. A snapshot that
+      would record no real change is refused outright, and every snapshot that does change something asks for
+      confirmation before it's saved. Any snapshot other than the first can be deleted individually (with its own
+      confirmation) if you recorded it by mistake. Nothing is recorded until you click Track, and
+      <strong>Untrack</strong> deletes the whole history permanently, with a confirmation.</p>
+
+    <p>All data processing happens locally in your browser. Nothing is transmitted anywhere, and the extension makes
+      no network requests of its own. See the <a href="privacy.html">Privacy Policy</a> for exactly what the member
+      tracker stores and how.</p>
   </div>
 </body>
 
